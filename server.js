@@ -6,13 +6,12 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 
-// Import all routes - MAKE SURE whatsappRoutes is imported
+// Routes
 import customerRoutes from './routes/customerRoutes.js';
 import attendanceRoutes from './routes/attendanceRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
-import whatsappRoutes from './routes/whatsappRoutes.js';  // This line is crucial!
+import whatsappRoutes from './routes/whatsappRoutes.js';
 
-// Load environment variables
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -56,19 +55,17 @@ requiredDirs.forEach(dir => {
   }
 });
 
-// ------------------ Routes Registration ------------------
+// ------------------ Routes ------------------
 console.log('🛣️ Registering routes...');
 
-// Register WhatsApp routes FIRST (most important)
 app.use('/api/whatsapp', whatsappRoutes);
 console.log('✅ WhatsApp routes registered at /api/whatsapp');
 
-// Register other routes
 app.use('/api/customers', customerRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/reports', reportRoutes);
 
-// Legacy routes for backward compatibility
+// Legacy routes
 app.use('/api', customerRoutes);
 app.use('/api', attendanceRoutes);
 app.use('/api', reportRoutes);
@@ -90,7 +87,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Test WhatsApp route specifically
+// Test WhatsApp
 app.get('/test-whatsapp', (req, res) => {
   res.json({
     message: 'WhatsApp route is working',
@@ -131,7 +128,7 @@ app.use((error, req, res, next) => {
   });
 });
 
-// ------------------ Database Connection ------------------
+// ------------------ Database ------------------
 const connectDatabase = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/gym_management', {
@@ -149,19 +146,20 @@ const connectDatabase = async () => {
 // ------------------ Start Server ------------------
 const startServer = async () => {
   try {
-    // Connect to database first
     await connectDatabase();
-    
-    // Start server
-    const PORT = process.env.PORT || 5000;
-    app.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
-      console.log(`🌐 API Base URL: http://localhost:${PORT}`);
-      console.log(`📱 WhatsApp API: http://localhost:${PORT}/api/whatsapp`);
-      console.log(`🔍 Health Check: http://localhost:${PORT}/health`);
-      console.log(`🧪 Test WhatsApp: http://localhost:${PORT}/test-whatsapp`);
-    });
-    
+
+    // ✅ Only run app.listen locally
+    if (process.env.NODE_ENV !== "production") {
+      const PORT = process.env.PORT || 5000;
+      app.listen(PORT, () => {
+        console.log(`🚀 Server running on http://localhost:${PORT}`);
+        console.log(`🌐 API Base URL: http://localhost:${PORT}`);
+        console.log(`📱 WhatsApp API: http://localhost:${PORT}/api/whatsapp`);
+        console.log(`🔍 Health Check: http://localhost:${PORT}/health`);
+        console.log(`🧪 Test WhatsApp: http://localhost:${PORT}/test-whatsapp`);
+      });
+    }
+
   } catch (error) {
     console.error('❌ Failed to start server:', error);
     process.exit(1);
@@ -170,4 +168,5 @@ const startServer = async () => {
 
 startServer();
 
+// ✅ Important for Vercel
 export default app;
