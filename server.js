@@ -6,12 +6,13 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 
-// Routes
+// Import routes
 import customerRoutes from './routes/customerRoutes.js';
 import attendanceRoutes from './routes/attendanceRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import whatsappRoutes from './routes/whatsappRoutes.js';
 
+// Load environment variables
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -20,18 +21,20 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // ------------------ Middleware ------------------
-app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'http://127.0.0.1:3000',
-    'http://127.0.0.1:5173'
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(
+  cors({
+    origin: [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:5173',
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
@@ -47,7 +50,7 @@ app.use((req, res, next) => {
 
 // ------------------ Create directories ------------------
 const requiredDirs = ['uploads', 'whatsapp-auth', 'logs'];
-requiredDirs.forEach(dir => {
+requiredDirs.forEach((dir) => {
   const dirPath = path.join(__dirname, dir);
   if (!fs.existsSync(dirPath)) {
     fs.mkdirSync(dirPath, { recursive: true });
@@ -57,7 +60,6 @@ requiredDirs.forEach(dir => {
 
 // ------------------ Routes ------------------
 console.log('🛣️ Registering routes...');
-
 app.use('/api/whatsapp', whatsappRoutes);
 console.log('✅ WhatsApp routes registered at /api/whatsapp');
 
@@ -65,7 +67,7 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/reports', reportRoutes);
 
-// Legacy routes
+// Legacy
 app.use('/api', customerRoutes);
 app.use('/api', attendanceRoutes);
 app.use('/api', reportRoutes);
@@ -82,12 +84,11 @@ app.get('/health', (req, res) => {
       whatsapp: '/api/whatsapp',
       customers: '/api/customers',
       attendance: '/api/attendance',
-      reports: '/api/reports'
-    }
+      reports: '/api/reports',
+    },
   });
 });
 
-// Test WhatsApp
 app.get('/test-whatsapp', (req, res) => {
   res.json({
     message: 'WhatsApp route is working',
@@ -97,8 +98,8 @@ app.get('/test-whatsapp', (req, res) => {
       'POST /api/whatsapp/request-whatsapp-verification',
       'POST /api/whatsapp/verify-whatsapp-code',
       'POST /api/whatsapp/send-message',
-      'POST /api/whatsapp/disconnect'
-    ]
+      'POST /api/whatsapp/disconnect',
+    ],
   });
 });
 
@@ -110,12 +111,12 @@ app.use((req, res, next) => {
     message: `Route ${req.method} ${req.url} not found`,
     availableRoutes: [
       '/health',
-      '/test-whatsapp', 
+      '/test-whatsapp',
       '/api/whatsapp/status',
       '/api/customers',
       '/api/attendance',
-      '/api/reports'
-    ]
+      '/api/reports',
+    ],
   });
 });
 
@@ -124,21 +125,21 @@ app.use((error, req, res, next) => {
   res.status(error.status || 500).json({
     success: false,
     message: error.message || 'Internal server error',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
 // ------------------ Database ------------------
 const connectDatabase = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/gym_management', {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log("✅ MongoDB Connected");
+    await mongoose.connect(
+      process.env.MONGO_URI || 'mongodb://localhost:27017/gym_management',
+      { useNewUrlParser: true, useUnifiedTopology: true }
+    );
+    console.log('✅ MongoDB Connected');
     return true;
   } catch (error) {
-    console.error("❌ MongoDB Connection Error:", error);
+    console.error('❌ MongoDB Connection Error:', error);
     throw error;
   }
 };
@@ -148,8 +149,7 @@ const startServer = async () => {
   try {
     await connectDatabase();
 
-    // ✅ Only run app.listen locally
-    if (process.env.NODE_ENV !== "production") {
+    if (process.env.NODE_ENV !== 'production') {
       const PORT = process.env.PORT || 5000;
       app.listen(PORT, () => {
         console.log(`🚀 Server running on http://localhost:${PORT}`);
@@ -159,7 +159,6 @@ const startServer = async () => {
         console.log(`🧪 Test WhatsApp: http://localhost:${PORT}/test-whatsapp`);
       });
     }
-
   } catch (error) {
     console.error('❌ Failed to start server:', error);
     process.exit(1);
@@ -168,5 +167,5 @@ const startServer = async () => {
 
 startServer();
 
-// ✅ Important for Vercel
+// ✅ Export app for Vercel
 export default app;
